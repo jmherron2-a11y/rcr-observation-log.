@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RCR Medication Tracker — Signature & Print Test Prototype</title>
+<style>
+:root{font-family:system-ui,Arial;color:#203744;background:#eef3f5}*{box-sizing:border-box}body{margin:0}header{background:#164b60;color:white;padding:18px 22px}h1{margin:0;font-size:24px}small{opacity:.9}main{max-width:1200px;margin:auto;padding:18px}.panel{background:white;border:1px solid #d6e0e4;border-radius:12px;padding:16px;margin:12px 0}h2{margin:0 0 12px;font-size:19px}label{display:block;font-weight:600;font-size:13px;margin:6px 0}input,select,textarea{width:100%;padding:9px;border:1px solid #b8c8cf;border-radius:7px;font:inherit}textarea{min-height:60px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}button,.btn{border:0;border-radius:7px;padding:10px 13px;background:#17637b;color:white;font-weight:650;cursor:pointer}button.secondary{background:#e4eef2;color:#184354}button.danger{background:#a83c36}.muted{color:#526773;font-size:13px}.warn{color:#a43c21;font-weight:700}.good{color:#176746;font-weight:700}table{border-collapse:collapse;width:100%;font-size:13px}th,td{border-bottom:1px solid #dae3e6;text-align:left;padding:8px;vertical-align:top}th{background:#f1f6f8} .scroll{overflow:auto}.pill{border-radius:20px;background:#e6f1f4;padding:4px 8px;display:inline-block}.hidden{display:none}.banner{background:#fff1cf;padding:12px;border-radius:8px;color:#694800;margin-top:10px}@media print{header,.toolbar,.entry,.no-print,.banner{display:none!important}main{padding:0}.panel{border:0;padding:4px}body{background:white}input,select{border:0}table{font-size:10px}h1{font-size:18px}}
+
+.signature-pad{border:2px solid #b8c8cf;border-radius:9px;background:#fff;width:100%;height:180px;display:block;touch-action:none;cursor:crosshair}
+.signature-image{max-width:360px;width:100%;max-height:125px;object-fit:contain;object-position:left center;border-bottom:1px solid #777}
+.sign-line{border-bottom:1px solid #333;min-width:230px;height:65px;display:none}
+.signature-meta{margin-top:10px;display:flex;gap:20px;flex-wrap:wrap}
+@media print{.signature-pad,.signature-controls,.sign-editor{display:none!important}.signature-image{display:block!important}.sign-line{display:block!important}.signature-image:not([src]){display:none!important}.signature-image[src]{border-bottom:0}.signature-image[src]+.sign-line{display:none!important}.signature-meta{font-size:11px}.print-signature-section{break-inside:avoid;page-break-inside:avoid}#signaturePrintNotes{display:block!important}}
+@media print{body.wet-print #savedSignature{display:none!important}body.wet-print #wetSignatureLine{display:block!important}body.wet-print #signedAt{visibility:hidden}}
+
+#rcrPrintArea{display:none}
+.rcr-preview-controls{position:sticky;top:0;z-index:20;background:#164b60;color:white;padding:12px;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.rcr-preview-controls[hidden]{display:none!important}
+.rcr-preview-controls button{background:white;color:#164b60}
+body.rcr-preview header,body.rcr-preview main{display:none!important}
+body.rcr-preview #rcrPrintArea{display:block!important;background:#edf1f3;padding:16px;overflow-x:auto}
+body.rcr-preview .rcr-page{width:279.4mm;min-height:215.9mm;margin:0 auto 14px;padding:8mm;background:white;box-shadow:0 1px 8px #aab}
+body.rcr-preview .rcr-meta{font:12px Georgia,serif}
+body.rcr-preview .rcr-met-row,body.rcr-preview .rcr-note-row{display:flex;gap:10px;margin:5px 0}
+body.rcr-preview .rcr-field{display:flex;gap:4px;flex:1}
+body.rcr-preview .rcr-field span{border-bottom:1px solid #222;flex:1}
+body.rcr-preview .rcr-title{text-align:center;font:bold 19px Georgia,serif;margin:0 0 14px}
+body.rcr-preview .rcr-columns{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:16px}
+body.rcr-preview .rcr-table{border-collapse:collapse;table-layout:fixed;width:100%;font-size:10px}
+body.rcr-preview .rcr-table th,body.rcr-preview .rcr-table td{border:1px solid black;padding:2px}
+body.rcr-preview .rcr-table td{height:25px}
+body.rcr-preview .rcr-footer{border-bottom:1px solid black;margin-top:16px;padding-bottom:4px}
+body.rcr-preview .rcr-disclaimer{font-size:9px;margin-top:7px}
+@media print{.rcr-preview-controls{display:none!important}}
+@media print{
+ @page{size:letter landscape;margin:6mm}
+ body.rcr-paper header,body.rcr-paper main,body.rcr-paper #rcrPreviewControls{display:none!important}
+ body.rcr-paper #rcrPrintArea{display:block!important}
+ body.rcr-paper{background:white!important;color:#000!important;margin:0!important}
+ .rcr-page{width:100%;height:198mm;box-sizing:border-box;page-break-after:always;break-after:page;display:flex;flex-direction:column;color:#000;font:9pt 'Times New Roman',serif}
+ .rcr-page:last-child{page-break-after:auto;break-after:auto}
+ .rcr-title{text-align:center;font:bold 16pt Georgia,serif;margin:0 0 5mm}
+ .rcr-meta{display:flex;flex-direction:column;gap:1.1mm;margin:0 0 1.2mm;font-weight:bold;line-height:1.2}
+ .rcr-met-row{display:flex;align-items:baseline;gap:2mm;min-height:4.2mm}
+ .rcr-field{display:flex;align-items:baseline;gap:1mm;white-space:nowrap;min-width:0}
+ .rcr-field span{display:inline-block;border-bottom:0.3mm solid #111;padding:0 1mm;min-width:15mm;min-height:3.2mm;overflow:hidden;text-overflow:ellipsis;font-weight:normal}
+ .rcr-field.flex{flex:1}.rcr-field.flex span{flex:1}
+ .rcr-note-row{display:flex;gap:2mm;margin-top:0.7mm;min-height:4.3mm;font-weight:bold}
+ .rcr-note-row .rcr-field{flex:1}
+ .rcr-columns{display:grid;grid-template-columns:1fr 1fr;gap:1.7mm;margin-top:7mm;flex:1;min-height:0}
+ .rcr-table{width:100%;height:100%;border-collapse:collapse;table-layout:fixed;font:bold 8.4pt 'Times New Roman',serif}
+ .rcr-table th,.rcr-table td{border:0.28mm solid black!important;color:#000!important;padding:0.2mm 0.7mm;text-align:left;vertical-align:middle;overflow:hidden;word-break:normal;background:#fff!important}
+ .rcr-table th{height:9mm;line-height:1.04;font-weight:bold}
+ .rcr-table td{height:5.5mm;font:normal 8pt Arial,sans-serif}
+ .rcr-table .signcell{background:#fff!important}
+ .rcr-footer{margin-top:3mm;border-bottom:0.25mm solid black;min-height:6mm;font:bold 10pt Georgia,serif}
+ .rcr-disclaimer{font:7pt Arial,sans-serif;margin-top:1mm}
+}
+
+/* iOS AirPrint single-sheet correction: preview dimensions must not leak into print. */
+@media print {
+  @page { size: 11in 8.5in; margin: 4mm; }
+  html, body { width:auto!important; height:auto!important; margin:0!important; padding:0!important; }
+  body.rcr-preview #rcrPrintArea, body.rcr-paper #rcrPrintArea { display:block!important; padding:0!important; margin:0!important; overflow:visible!important; background:white!important; }
+  body.rcr-preview .rcr-page, body.rcr-paper .rcr-page {
+    box-sizing:border-box!important; width:100%!important; max-width:100%!important;
+    height:195mm!important; min-height:0!important; max-height:195mm!important;
+    padding:0!important; margin:0!important; box-shadow:none!important;
+    display:flex!important; flex-direction:column!important; overflow:hidden!important;
+    break-inside:avoid!important; page-break-inside:avoid!important;
+  }
+  body.rcr-preview .rcr-title, body.rcr-paper .rcr-title { font-size:14pt!important; margin:0 0 2mm!important; }
+  body.rcr-preview .rcr-meta, body.rcr-paper .rcr-meta { font-size:8pt!important; gap:0.5mm!important; line-height:1!important; margin-bottom:0!important; }
+  body.rcr-preview .rcr-met-row, body.rcr-paper .rcr-met-row { min-height:3.6mm!important; margin:0!important; gap:1mm!important; }
+  body.rcr-preview .rcr-note-row, body.rcr-paper .rcr-note-row { min-height:3.6mm!important; margin:0!important; }
+  body.rcr-preview .rcr-columns, body.rcr-paper .rcr-columns { margin-top:3mm!important; gap:1.3mm!important; min-height:0!important; flex:1!important; }
+  body.rcr-preview .rcr-table, body.rcr-paper .rcr-table { height:100%!important; font-size:7pt!important; }
+  body.rcr-preview .rcr-table th, body.rcr-paper .rcr-table th { height:6mm!important; padding:0.1mm 0.4mm!important; font-size:7pt!important; }
+  body.rcr-preview .rcr-table td, body.rcr-paper .rcr-table td { height:4.7mm!important; padding:0.1mm 0.4mm!important; font-size:7pt!important; }
+  body.rcr-preview .rcr-footer, body.rcr-paper .rcr-footer { margin-top:1.5mm!important; min-height:4mm!important; font-size:8pt!important; padding:0!important; }
+  body.rcr-preview .rcr-disclaimer, body.rcr-paper .rcr-disclaimer { margin-top:0.5mm!important; font-size:6pt!important; }
+  body.rcr-preview #rcrPreviewControls {display:none!important;}
+}
+
+/* Compact iPhone/AirPrint output: exactly one content page per 44-row sheet.
+   Avoid fixed 100% table heights that caused AirPrint to flow the footer to page two. */
+@media print {
+ @page { size: 11in 8.5in; margin: 5mm; }
+ html, body { margin:0!important; padding:0!important; width:100%!important; }
+ body.rcr-preview header, body.rcr-preview main,
+ body.rcr-paper header, body.rcr-paper main,
+ #rcrPreviewControls { display:none!important; }
+ #rcrPrintArea { display:block!important; margin:0!important; padding:0!important; }
+ .rcr-page, body.rcr-preview .rcr-page, body.rcr-paper .rcr-page {
+   width:100%!important; height:177mm!important; max-height:177mm!important;
+   min-height:0!important; padding:0!important; margin:0!important;
+   display:flex!important; flex-direction:column!important; box-shadow:none!important;
+   overflow:visible!important; break-after:page!important; page-break-after:always!important;
+ }
+ .rcr-page:last-child, body.rcr-preview .rcr-page:last-child,
+ body.rcr-paper .rcr-page:last-child { break-after:auto!important; page-break-after:auto!important; }
+ .rcr-title { font-size:12pt!important; margin:0 0 1.5mm!important; line-height:1.05!important; }
+ .rcr-meta { font-size:7.2pt!important; gap:0!important; margin:0!important; line-height:1.05!important; }
+ .rcr-met-row,.rcr-note-row { min-height:3mm!important; margin:0!important; }
+ .rcr-field span { min-height:2.5mm!important; }
+ .rcr-columns { flex:1 1 auto!important; min-height:0!important; margin-top:2mm!important; margin-bottom:0!important; }
+ .rcr-table { height:100%!important; font-size:6.4pt!important; }
+ .rcr-table th { height:5.5mm!important; font-size:6.4pt!important; padding:0 0.3mm!important; }
+ .rcr-table td { height:4.8mm!important; font-size:6.4pt!important; padding:0 0.3mm!important; }
+ .rcr-footer { margin-top:1mm!important; min-height:3mm!important; font-size:7pt!important; }
+ .rcr-disclaimer { margin-top:0.5mm!important; font-size:5.5pt!important; }
+}
+</style></head><body>
+<header><h1>Ranch Creek Recovery · Medication Tracker</h1><small>Offline standalone prototype · Six beds · Multiple medications per client</small></header>
+<main><div class="banner">DEMONSTRATION ONLY — not approved for real patient records or clinical medication administration. Data is stored unencrypted in this browser profile; no authentication, tamper-proof audit trail, or HIPAA safeguards. Use fictional test data only.</div>
+<section class="panel"><h2>Client / Bed</h2><p id="storage-status" class="warn">Checking whether this browser can save...</p><div class="grid"><div><label>Choose bed</label><select id="bed"><option value="0">Bed 1</option><option value="1">Bed 2</option><option value="2">Bed 3</option><option value="3">Bed 4</option><option value="4">Bed 5</option><option value="5">Bed 6</option></select></div><div><label>Client name (test data only)</label><input id="client" placeholder="Fictional client"></div><div><label>Client ID (test data only)</label><input id="clientid" placeholder="Test ID"></div></div><div class="toolbar"><button onclick="saveClient()">Save client for this bed</button><button class="secondary" onclick="openRcrPrint('shift')">Print shift-start form</button><button class="secondary" onclick="openRcrPrint('updated')">Print updated log / PDF</button></div></section>
+<section class="panel"><h2>Medication inventory</h2><div class="grid"><div><label>Medication name</label><input id="medname" placeholder="Example: Test medication"></div><div><label>Strength / form</label><input id="strength" placeholder="e.g. 10 mg tablet"></div><div><label>Directions / frequency</label><input id="directions" placeholder="As written on order"></div><div><label>Starting count</label><input id="start" type="number" min="0" step="0.001" placeholder="30"></div><div><label>Unit</label><select id="unit"><option>tablets</option><option>capsules</option><option>mL</option><option>doses</option><option>units</option><option>other</option></select></div><div><label>Low stock threshold</label><input id="threshold" type="number" min="0" step="0.001" value="5"></div></div><div class="toolbar"><button onclick="addMed()">Add medication to selected bed</button></div><div class="scroll"><table><thead><tr><th>Medication</th><th>Directions</th><th>Starting</th><th>Remaining</th><th>Status</th><th></th></tr></thead><tbody id="medrows"></tbody></table></div></section>
+<section class="panel entry"><h2>Record medication activity</h2><div class="grid"><div><label>Medication</label><select id="selectedmed"></select></div><div><label>Activity</label><select id="activity"><option value="admin">Administered</option><option value="received">Received / restocked</option><option value="waste">Waste / disposal</option><option value="correction">Count adjustment (signed quantity)</option><option value="held">Held / refused / not given (no deduction)</option></select></div><div><label>Date and time</label><input id="datetime" type="datetime-local"></div><div><label>Quantity</label><input id="qty" type="number" min="0" step="0.001" value="1"></div><div><label>Staff initials</label><input id="staff" maxlength="12"></div><div><label>Client initials (if applicable)</label><input id="initials" maxlength="12"></div></div><label>Reason / comments</label><textarea id="note" placeholder="Record reason for adjustment, waste, refusal, etc."></textarea><div class="toolbar"><button onclick="record()">Record activity</button></div><p class="muted">An administered or wasted quantity subtracts from inventory; received stock adds to it; held/refused has no effect. Corrections require a signed adjustment such as +2 or -1. Inventory is calculated from recorded transactions.</p></section>
+<section class="panel"><h2>Medication log · <span id="bedtitle"></span></h2><div class="toolbar no-print"><button class="secondary" onclick="exportCSV()">Export CSV</button><button class="secondary" onclick="backup()">Backup all beds (JSON)</button><label class="btn" style="margin:0;cursor:pointer">Restore backup<input type="file" accept=".json,application/json" onchange="restore(event)" style="display:none"></label><button class="danger" onclick="resetAll()">Clear ALL test data</button></div><div class="scroll"><table><thead><tr><th>Date</th><th>Time</th><th>Medication</th><th>Activity</th><th>Quantity</th><th>Balance</th><th>Staff</th><th>Client</th><th>Comments</th></tr></thead><tbody id="logs"></tbody></table></div></section>
+<section class="panel no-print" id="rcrPrintSettings"><h2>RCR Medication Log — Paper printing</h2><p class="muted">Choose one medication and print the RCR-style form. Every administration row includes separate blank spaces for actual staff and client wet signatures. A recorded staff initial is not a wet signature.</p><div class="grid"><div><label for="printMedication">Medication to print</label><select id="printMedication"></select></div><div><label for="printDate">Shift date</label><input id="printDate" type="date"></div><div><label for="printShift">Shift</label><select id="printShift"><option value="all">All day (00:00–23:59)</option><option value="day">Day (07:00–18:59)</option><option value="night">Night (19:00–06:59 next day)</option></select></div><div><label for="printDOB">DOB (fictional test only)</label><input id="printDOB" placeholder="MM/DD/YYYY" autocomplete="off"></div><div><label for="printInitial">Initial dose (date and time) — test only</label><input id="printInitial" placeholder="MM/DD/YYYY HH:MM"></div><div><label for="printRx">Rx # (fictional test only)</label><input id="printRx" placeholder="Test Rx #"></div><div><label for="printSide">24-hour side effects / observations</label><input id="printSide" placeholder="Enter observed or ordered information"></div></div><label for="printChanges">Taper instructions / order changes (as documented in authorized order)</label><textarea id="printChanges" placeholder="Leave blank if none"></textarea><div class="toolbar"><button onclick="openRcrPrint('shift')">Print shift-start form (blank entries)</button><button onclick="openRcrPrint('updated')">Print updated medication log / PDF</button></div><p class="warn">Printed signatures must be obtained at the time of the actual medication event according to RCR policy. Never pre-sign blank rows. Printed reports from this demo do not replace approved clinical records.</p></section>
+<section class="panel print-signature-section"><h2>Staff signature · Selected bed</h2><p class="muted sign-editor">Sign using your finger or Apple Pencil on iPhone/iPad. This is a basic electronic image signature for a test copy, not a verified, authenticated clinical e-signature.</p>
+<div class="grid sign-editor"><div><label for="signerName">Printed staff name (test only)</label><input id="signerName" placeholder="Example: Test Staff"></div><div><label for="signerRole">Staff title / role</label><input id="signerRole" placeholder="Example: Counselor"></div></div>
+<div class="sign-editor"><label>Draw signature below</label><canvas id="signaturePad" class="signature-pad" aria-label="Draw staff signature with finger or pointer"></canvas></div>
+<div class="toolbar signature-controls"><button onclick="saveSignature()">Save digital signature for this bed</button><button class="secondary" onclick="clearSignature()">Clear signature</button><button class="secondary" onclick="printSelected()">Print selected bed / Save PDF</button><button class="secondary" onclick="printBlank()">Print for handwritten signature</button></div>
+<div id="signatureStatus" class="muted" role="status" aria-live="polite">No signature saved for this bed.</div>
+<div class="signature-meta"><div><b>Staff signature:</b><div><img class="signature-image" id="savedSignature" alt="Saved test staff signature" hidden><div id="wetSignatureLine" class="sign-line"></div></div></div><div><b>Printed name / title:</b><div id="printedSigner">________________________</div><b>Signed at:</b><div id="signedAt">________________________</div></div></div>
+<p id="signaturePrintNotes" class="muted">Test-only signature. Printed output is not a secure, verified medication administration record. Signing does not independently verify any medication activity.</p>
+</section>
+<p class="muted">Runs without internet once downloaded. Browser storage is device/browser-specific and may be cleared. Back up test data regularly. For actual use, have a qualified developer implement secure accounts, encryption, audit logs, controlled-substance reconciliation, and facility approval.</p></main>
+<div id="rcrPreviewControls" class="rcr-preview-controls" hidden>
+  <strong>RCR Medication Log — Print Preview</strong>
+  <button type="button" onclick="window.print()">Print / Save PDF</button>
+  <button type="button" onclick="closeRcrPreview()">Return to Tracker</button>
+  <span>Choose US Letter and Landscape in your iPhone printer options.</span>
+</div>
+<div id="rcrPrintArea" aria-label="RCR printable medication logs"></div>
+<script>
+const KEY='rcr_med_tracker_v3';const empty=()=>({beds:Array.from({length:6},()=>({name:'',id:'',meds:[],events:[]}))});
+let db;try{db=JSON.parse(localStorage.getItem(KEY))||empty();if(!Array.isArray(db.beds)||db.beds.length!==6)db=empty()}catch{db=empty()}
+const $=id=>document.getElementById(id), esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])), uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,9);
+function persist(){try{localStorage.setItem(KEY,JSON.stringify(db));const ok=localStorage.getItem(KEY)===JSON.stringify(db);$('storage-status').textContent=ok?'Saved in this browser. Export a backup regularly.':'Automatic saving is unavailable here. Use Backup all beds (JSON) after every session.'}catch(e){$('storage-status').textContent='Automatic saving is unavailable in this viewer. Use Backup all beds (JSON), then restore it next time.'}render()}
+function bed(){return db.beds[Number($('bed').value)]}function fmt(n){return Number(Number(n).toFixed(3))}
+function balance(m,b){return fmt(Number(m.start)+b.events.filter(e=>e.medId===m.id).reduce((s,e)=>s+Number(e.delta),0))}
+function init(){$('bed').addEventListener('change',()=>{render();loadSignature()});try{const t='rcr_storage_test';localStorage.setItem(t,'ok');const ok=localStorage.getItem(t)==='ok';localStorage.removeItem(t);$('storage-status').textContent=ok?'Browser storage is available. Export backups regularly.':'Browser storage is blocked. Export a JSON backup after every session.'}catch(e){$('storage-status').textContent='This file viewer blocks browser storage. Use JSON backups, or open the app from a normal HTTPS website.'}$('datetime').value=new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,16);render();initSignature();loadSignature()}
+function saveClient(){bed().name=$('client').value.trim();bed().id=$('clientid').value.trim();persist()}
+function addMed(){const b=bed(),name=$('medname').value.trim(),n=Number($('start').value),threshold=Number($('threshold').value);if(!name||$('start').value===''||!Number.isFinite(n)||n<0||!Number.isFinite(threshold)||threshold<0)return alert('Enter medication, valid starting count, and threshold.');b.meds.push({id:uid(),name,strength:$('strength').value.trim(),directions:$('directions').value.trim(),start:n,unit:$('unit').value,threshold});$('medname').value='';$('start').value='';persist()}
+function removeMed(id){const b=bed();if(b.events.some(e=>e.medId===id))return alert('This medication has recorded activity. Keep it for the audit history.');if(confirm('Delete this unused medication?')){b.meds=b.meds.filter(m=>m.id!==id);persist()}}
+function record(){const b=bed(),m=b.meds.find(m=>m.id===$('selectedmed').value),type=$('activity').value,raw=$('qty').value,n=Number(raw),when=$('datetime').value,staff=$('staff').value.trim(),note=$('note').value.trim();if(!m||!when||!staff||raw===''||!Number.isFinite(n)||n<0)return alert('Select medication, date/time, nonnegative quantity, and staff initials.');if(type==='correction')return alert('For count adjustments use the dedicated signed adjustment field below.');if(['waste','held'].includes(type)&&!note)return alert('Enter a reason for this activity.');let delta=type==='received'?n:type==='held'?0:-n;if(type!=='held'&&n===0)return alert('Quantity must be greater than zero.');if(balance(m,b)+delta<0)return alert('Not enough inventory. Check the count and transaction history.');b.events.push({id:uid(),medId:m.id,type,when,qty:n,delta,staff,initials:$('initials').value.trim(),note,created:new Date().toISOString()});$('note').value='';persist()}
+function adjust(){const b=bed(),m=b.meds.find(m=>m.id===$('selectedmed').value),raw=prompt('Enter signed inventory adjustment, e.g. +2 or -1');if(raw===null)return;const delta=Number(raw);if(!m||!raw.trim()||!Number.isFinite(delta)||delta===0||balance(m,b)+delta<0)return alert('Invalid adjustment.');const reason=prompt('Required reason for adjustment:');if(!reason?.trim())return alert('Reason required.');const staff=$('staff').value.trim();if(!staff)return alert('Staff initials required.');b.events.push({id:uid(),medId:m.id,type:'correction',when:$('datetime').value||new Date().toISOString().slice(0,16),qty:Math.abs(delta),delta,staff,initials:$('initials').value.trim(),note:reason,created:new Date().toISOString()});persist()}
+function render(){const b=bed();updatePrintMeds();$('client').value=b.name;$('clientid').value=b.id;$('bedtitle').textContent=`Bed ${Number($('bed').value)+1}${b.name?' · '+b.name:''}`;const selected=$('selectedmed').value;$('selectedmed').innerHTML=b.meds.map(m=>`<option value="${esc(m.id)}">${esc(m.name)} · ${esc(m.strength)}</option>`).join('');if(b.meds.some(m=>m.id===selected))$('selectedmed').value=selected;
+$('medrows').innerHTML=b.meds.map(m=>{const bal=balance(m,b);return `<tr><td><b>${esc(m.name)}</b><br>${esc(m.strength)}</td><td>${esc(m.directions)}</td><td>${fmt(m.start)} ${esc(m.unit)}</td><td><b>${bal} ${esc(m.unit)}</b></td><td class="${bal<=m.threshold?'warn':'good'}">${bal<=m.threshold?'LOW STOCK':'OK'}</td><td><button class="secondary no-print" onclick="removeMed('${m.id}')">Remove</button></td></tr>`}).join('')||'<tr><td colspan="6">No medications for this bed yet.</td></tr>';
+let running=Object.fromEntries(b.meds.map(m=>[m.id,Number(m.start)]));const events=[...b.events].sort((a,z)=>a.when.localeCompare(z.when)||a.created.localeCompare(z.created));$('logs').innerHTML=events.map(e=>{const m=b.meds.find(m=>m.id===e.medId);running[e.medId]=fmt((running[e.medId]||0)+e.delta);return `<tr><td>${esc(e.when.slice(0,10))}</td><td>${esc(e.when.slice(11,16))}</td><td>${esc(m?.name||'Unknown')}</td><td>${esc(e.type)}</td><td>${e.delta>0?'+':''}${fmt(e.delta)} ${esc(m?.unit||'')}</td><td>${running[e.medId]}</td><td>${esc(e.staff)}</td><td>${esc(e.initials)}</td><td>${esc(e.note)}</td></tr>`}).join('')||'<tr><td colspan="9">No recorded activity.</td></tr>';
+$('activity').onchange=()=>{if($('activity').value==='correction')adjust()};renderSignature()}
+let signatureCtx=null, drawing=false, signedStroke=false;
+function initSignature(){
+ const c=$('signaturePad'); signatureCtx=c.getContext('2d');
+ const resize=()=>{const rect=c.getBoundingClientRect();if(!rect.width)return;const dpr=window.devicePixelRatio||1; c.width=Math.round(rect.width*dpr);c.height=Math.round(rect.height*dpr);signatureCtx.setTransform(dpr,0,0,dpr,0,0);signatureCtx.strokeStyle='#172f42';signatureCtx.lineWidth=2.2;signatureCtx.lineCap='round';signatureCtx.lineJoin='round';signedStroke=false};
+ resize();window.addEventListener('resize',resize);window.addEventListener('afterprint',()=>document.body.classList.remove('wet-print'));
+ const xy=e=>{let r=c.getBoundingClientRect();return {x:e.clientX-r.left,y:e.clientY-r.top}};
+ c.addEventListener('pointerdown',e=>{e.preventDefault();drawing=true;signedStroke=true;c.setPointerCapture(e.pointerId);let p=xy(e);signatureCtx.beginPath();signatureCtx.moveTo(p.x,p.y);signatureCtx.lineTo(p.x+.01,p.y+.01);signatureCtx.stroke()});
+ c.addEventListener('pointermove',e=>{if(!drawing)return;e.preventDefault();let p=xy(e);signatureCtx.lineTo(p.x,p.y);signatureCtx.stroke()});
+ for(const event of ['pointerup','pointercancel','lostpointercapture'])c.addEventListener(event,()=>drawing=false);
+}
+function clearPad(){const c=$('signaturePad');if(signatureCtx)signatureCtx.clearRect(0,0,c.width,c.height);signedStroke=false}
+function loadSignature(){clearPad();let s=bed().signature||{};$('signerName').value=s.name||'';$('signerRole').value=s.role||'';renderSignature()}
+function renderSignature(){let s=bed().signature||{},img=$('savedSignature');if(s.data){img.src=s.data;img.hidden=false;$('signatureStatus').textContent='Saved test signature for this bed.'}else{img.removeAttribute('src');img.hidden=true;$('signatureStatus').textContent='No signature saved for this bed.'}$('printedSigner').textContent=[s.name,s.role].filter(Boolean).join(' · ')||'________________________';$('signedAt').textContent=s.at?new Date(s.at).toLocaleString():'________________________'}
+function saveSignature(){if(!signedStroke)return alert('Please draw a signature first.');let name=$('signerName').value.trim();if(!name)return alert('Enter the printed staff name.');const c=$('signaturePad');bed().signature={name,role:$('signerRole').value.trim(),at:new Date().toISOString(),data:c.toDataURL('image/png')};persist();renderSignature();alert('Test signature saved to this browser for the selected bed.');}
+function clearSignature(){if(!confirm('Remove saved test signature for this bed?'))return;delete bed().signature;clearPad();persist();renderSignature()}
+function printSelected(){document.body.classList.remove('wet-print');window.print()}
+function printBlank(){document.body.classList.add('wet-print');window.print()}
+function download(name,content,type){const a=document.createElement('a'),u=URL.createObjectURL(new Blob([content],{type}));a.href=u;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),2000)}
+function backup(){download('RCR_TEST_backup_'+new Date().toISOString().slice(0,10)+'.json',JSON.stringify(db,null,2),'application/json')}
+function restore(ev){const f=ev.target.files?.[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const obj=JSON.parse(r.result);if(!Array.isArray(obj.beds)||obj.beds.length!==6||obj.beds.some(b=>!Array.isArray(b.meds)||!Array.isArray(b.events)))throw Error('Invalid backup structure');if(confirm('Replace all current test data with this backup?')){db=obj;persist()}}catch(e){alert('Backup invalid: '+e.message)}};r.readAsText(f);ev.target.value=''}
+function exportCSV(){const b=bed(),lines=[['Date','Time','Medication','Strength','Activity','Quantity change','Staff initials','Client initials','Notes']];for(const e of b.events){const m=b.meds.find(m=>m.id===e.medId);lines.push([e.when.slice(0,10),e.when.slice(11,16),m?.name||'',m?.strength||'',e.type,e.delta,e.staff,e.initials,e.note])}const csv=lines.map(row=>row.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');download('RCR_TEST_bed_'+(Number($('bed').value)+1)+'.csv','\ufeff'+csv,'text/csv;charset=utf-8')}
+function resetAll(){if(confirm('Permanently erase ALL SIX BEDS of test data?')&&confirm('Confirm again: delete everything?')){db=empty();persist()}}
+
+// RCR paper medication log print engine: separate blank wet signatures per row.
+const RCR_ROWS_PER_HALF=22;
+function rcrCell(s){return esc(s??'')}
+function dateView(iso){if(!iso)return '';const [y,m,d]=iso.slice(0,10).split('-');return `${m}/${d}/${y}`}
+function rcrLogs(m,b){let running=Number(m.start),events=[...b.events].filter(e=>e.medId===m.id).sort((a,z)=>a.when.localeCompare(z.when)||String(a.created).localeCompare(String(z.created)));
+ return events.map(e=>{running=fmt(running+Number(e.delta));return {...e,left:running}})}
+function shiftFilter(e,date,shift){const day=e.when.slice(0,10),time=e.when.slice(11,16);if(shift==='all')return day===date;if(shift==='day')return day===date&&time>='07:00'&&time<'19:00';const next=new Date(date+'T12:00:00');next.setDate(next.getDate()+1);const nxt=[next.getFullYear(),String(next.getMonth()+1).padStart(2,'0'),String(next.getDate()).padStart(2,'0')].join('-');return (day===date&&time>='19:00')||(day===nxt&&time<'07:00')}
+function paperTable(rows){const chunks=Array.from({length:RCR_ROWS_PER_HALF},(_,i)=>rows[i]||null);return `<table class="rcr-table"><colgroup><col style="width:13%"><col style="width:13%"><col style="width:13%"><col style="width:12%"><col style="width:14%"><col style="width:14%"><col style="width:21%"></colgroup><thead><tr><th>Date:</th><th>Time:</th><th>Dose:</th><th># Left:</th><th>Staff:</th><th>Client:</th><th>Count/<br>Initials:</th></tr></thead><tbody>${chunks.map(e=>`<tr><td>${e?dateView(e.when):''}</td><td>${e?rcrCell(e.when.slice(11,16)):''}</td><td>${e?rcrCell(e.type==='admin'?fmt(e.qty)+' '+(e.unit||''):e.type+' '+fmt(e.qty)):''}</td><td>${e?rcrCell(e.left):''}</td><td class="signcell"></td><td class="signcell"></td><td>${e?rcrCell(e.staff||''):''}</td></tr>`).join('')}</tbody></table>`}
+function rcrPrintPage(b,m,rows,mode,pageNum,total,date,shift){let a=rows.slice(0,RCR_ROWS_PER_HALF),c=rows.slice(RCR_ROWS_PER_HALF,RCR_ROWS_PER_HALF*2);return `<div class="rcr-page"><div class="rcr-title">Ranch Creek Recovery Medication Log</div><div class="rcr-meta"><div class="rcr-met-row"><div class="rcr-field flex">Client Name: <span>${rcrCell(b.name)}</span></div><div class="rcr-field">DOB: <span>${rcrCell($('printDOB').value)}</span></div><div class="rcr-field">ID#: <span>${rcrCell(b.id)}</span></div><div class="rcr-field">Date: <span>${dateView(date)}</span></div><div class="rcr-field">Quantity: <span>${rcrCell(fmt(m.start))} ${rcrCell(m.unit)}</span></div></div><div class="rcr-met-row"><div class="rcr-field flex">Medication Name: <span>${rcrCell(m.name)}</span></div><div class="rcr-field">MG: <span>${rcrCell(m.strength)}</span></div><div class="rcr-field flex">Rx #: <span>${rcrCell($('printRx').value)}</span></div></div><div class="rcr-met-row"><div class="rcr-field flex">Administration Directions: <span>${rcrCell(m.directions)}</span></div></div><div class="rcr-note-row"><div class="rcr-field">Initial Dose (date and time): <span>${rcrCell($('printInitial').value)}</span></div><div class="rcr-field">24 Hour Side Effects: <span>${rcrCell($('printSide').value)}</span></div></div></div><div class="rcr-columns">${paperTable(a)}${paperTable(c)}</div><div class="rcr-footer">Taper Instructions or Order Changes: ${rcrCell($('printChanges').value)}</div><div class="rcr-disclaimer">TEST FORM — fictional information only. Staff and client columns are intentionally blank for handwritten signatures following the actual event. ${mode==='shift'?'Shift-start blank form':'Updated log'} · ${pageNum}/${total}</div></div>`}
+function openRcrPrint(mode){const b=bed(),m=b.meds.find(m=>m.id===$('printMedication').value);if(!m)return alert('Add and choose a medication before printing.');const date=$('printDate').value;if(!date)return alert('Select shift date.');const shift=$('printShift').value;
+ const logged=mode==='updated'?rcrLogs(m,b).filter(e=>shiftFilter(e,date,shift)).map(e=>({...e,unit:m.unit})):[];
+ const chunks=[];if(!logged.length)chunks.push([]);else for(let i=0;i<logged.length;i+=2*RCR_ROWS_PER_HALF)chunks.push(logged.slice(i,i+2*RCR_ROWS_PER_HALF));
+ $('rcrPrintArea').innerHTML=chunks.map((chunk,i)=>rcrPrintPage(b,m,chunk,mode,i+1,chunks.length,date,shift)).join('');document.body.classList.add('rcr-paper');
+ // On iPhone the native print snapshot may run after the page switches back,
+ // causing the application screen to be printed instead of this report.
+ // Open a dedicated, independently printable document instead.
+ $('rcrPreviewControls').hidden=false;
+ document.body.classList.add('rcr-preview');
+ window.scrollTo(0,0);
+
+}
+function closeRcrPreview(){
+ document.body.classList.remove('rcr-paper','rcr-preview');
+ $('rcrPreviewControls').hidden=true;
+ $('rcrPrintArea').innerHTML='';
+}
+window.addEventListener('afterprint',()=>{});
+function rcrPrintDefaults(){const day=new Date();const tz=new Date(day.getTime()-day.getTimezoneOffset()*60000);$('printDate').value=tz.toISOString().slice(0,10)}
+function updatePrintMeds(){const b=bed(),cur=$('printMedication').value;$('printMedication').innerHTML=b.meds.map(m=>`<option value="${esc(m.id)}">${esc(m.name)} · ${esc(m.strength)}</option>`).join('');if(b.meds.some(m=>m.id===cur))$('printMedication').value=cur}
+
+rcrPrintDefaults();init();
+</script></body></html>
